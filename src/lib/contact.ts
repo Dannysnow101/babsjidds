@@ -17,5 +17,5 @@ export const CONTACT = {
   emailDisplay: "babsburg2020@gmail.com",
   emailHref: "mailto:babsburg2020@gmail.com",
 
-  address: "3 Demola Sewoniku close, Ajah, Lagos, Nigeria",
+  address: "Suite 18C Platinum mall, Ikota first gate, Eti-Osa, Lekki 106104, Lagos, Nigeria",
 } as const;
