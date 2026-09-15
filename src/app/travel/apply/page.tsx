@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent, ReactNode } from 'react';
+import { ChevronDown } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { CONTACT } from '@/lib/contact';
 
@@ -34,10 +35,71 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+// Native <select> popups largely ignore custom colors in most browsers
+// (Chrome on Windows in particular), so this is a fully custom dropdown
+// built from our own elements — no native popup involved, so it always
+// matches the brand.
+function VisaTypeSelect({ value, onChange }: { value: string; onChange: (type: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={`${inputClass} flex items-center justify-between text-left`}
+      >
+        <span className={value ? 'text-porcelain' : 'text-slate'}>{value || 'Select a visa type'}</span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-gold transition-transform duration-200 ${open ? 'rotate-180' : ''}`} strokeWidth={1.5} />
+      </button>
+
+      {open && (
+        <ul role="listbox" className="absolute z-20 mt-1 w-full border border-ink-line bg-ink shadow-lg shadow-black/40">
+          {VISA_TYPES.map((type) => (
+            <li key={type} role="option" aria-selected={value === type}>
+              <button
+                type="button"
+                onClick={() => {
+                  onChange(type);
+                  setOpen(false);
+                }}
+                className={`block w-full px-4 py-3 text-left text-sm transition-colors ${
+                  value === type ? 'bg-ink-deep text-gold' : 'text-porcelain hover:bg-ink-deep hover:text-gold'
+                }`}
+              >
+                {type}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function ApplyPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // Prefill the visa type from ?type= if the visitor arrived from the visa
   // services page. Read inside the lazy initializer (not an effect) so it
   // resolves on the very first client render, with no extra re-render.
@@ -56,22 +118,26 @@ export default function ApplyPage() {
 
   const update =
     (field: keyof typeof form) =>
-    (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+    (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [field]: e.target.value }));
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!form.visaType) {
+      setErrorMessage('Please select a visa type.');
+      return;
+    }
     setSubmitting(true);
-    setError(false);
+    setErrorMessage(null);
     try {
-      await fetch('/', {
+      await fetch('/__forms.html', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: encode({ 'form-name': 'visa-application', ...form }),
       });
       setSubmitted(true);
     } catch {
-      setError(true);
+      setErrorMessage('Something went wrong sending this — please try again, or call/WhatsApp us directly.');
     } finally {
       setSubmitting(false);
     }
@@ -123,18 +189,6 @@ export default function ApplyPage() {
         Fill this in, grab a copy of your details, then call or WhatsApp us to continue.
       </p>
 
-      {/* Hidden static duplicate so Netlify detects this form at build time */}
-      <form name="visa-application" data-netlify="true" netlify-honeypot="bot-field" hidden>
-        <input type="text" name="fullName" />
-        <input type="tel" name="phone" />
-        <input type="email" name="email" />
-        <input type="text" name="visaType" />
-        <input type="text" name="destination" />
-        <input type="date" name="travelDate" />
-        <textarea name="notes" />
-        <input type="text" name="bot-field" />
-      </form>
-
       <form onSubmit={handleSubmit} className="mt-10 space-y-6">
         <Field label="Full name">
           <input required name="fullName" type="text" value={form.fullName} onChange={update('fullName')} className={inputClass} />
@@ -149,20 +203,7 @@ export default function ApplyPage() {
         </div>
         <div className="grid gap-6 sm:grid-cols-2">
           <Field label="Visa type">
-            <select
-              required
-              name="visaType"
-              value={form.visaType}
-              onChange={update('visaType')}
-              suppressHydrationWarning
-              style={{ colorScheme: 'dark' }}
-              className={inputClass}
-            >
-              <option value="" disabled style={{ backgroundColor: '#0a0908', color: '#f3efe4' }}>Select a visa type</option>
-              {VISA_TYPES.map((type) => (
-                <option key={type} value={type} style={{ backgroundColor: '#0a0908', color: '#f3efe4' }}>{type}</option>
-              ))}
-            </select>
+            <VisaTypeSelect value={form.visaType} onChange={(type) => setForm((f) => ({ ...f, visaType: type }))} />
           </Field>
           <Field label="Destination country">
             <input required name="destination" type="text" value={form.destination} onChange={update('destination')} className={inputClass} />
@@ -175,11 +216,7 @@ export default function ApplyPage() {
           <textarea name="notes" rows={4} value={form.notes} onChange={update('notes')} className={inputClass} />
         </Field>
 
-        {error && (
-          <p className="text-sm text-red-400">
-            Something went wrong sending this — please try again, or call/WhatsApp us directly.
-          </p>
-        )}
+        {errorMessage && <p className="text-sm text-red-400">{errorMessage}</p>}
 
         <button
           type="submit"

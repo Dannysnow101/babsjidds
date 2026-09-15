@@ -8,14 +8,14 @@ export const CONTACT = {
   shortName: "BABSJIDDS",
   rcNumber: "RC 1055264",
 
-  phoneDisplay: "+234 800 000 0000",
-  phoneHref: "tel:+2348000000000",
+  phoneDisplay: "+234 802 312 7479",
+  phoneHref: "tel:+2348023127479",
 
-  whatsappDisplay: "+234 800 000 0000",
-  whatsappHref: "https://wa.me/2348000000000",
+  whatsappDisplay: "+234 802 312 7479",
+  whatsappHref: "https://wa.me/2348023127479",
 
-  emailDisplay: "info@babsjidds.com",
-  emailHref: "mailto:info@babsjidds.com",
+  emailDisplay: "babsburg2020@gmail.com",
+  emailHref: "mailto:babsburg2020@gmail.com",
 
   address: "3 Demola Sewoniku close, Ajah, Lagos, Nigeria",
 } as const;

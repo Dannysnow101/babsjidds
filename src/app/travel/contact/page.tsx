@@ -30,7 +30,7 @@ export default function ContactPage() {
     setSubmitting(true);
     setError(false);
     try {
-      await fetch('/', {
+      await fetch('/__forms.html', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: encode({ 'form-name': 'contact', ...form }),
@@ -84,14 +84,6 @@ export default function ContactPage() {
           </div>
         ) : (
           <>
-            <form name="contact" data-netlify="true" netlify-honeypot="bot-field" hidden>
-              <input type="text" name="name" />
-              <input type="email" name="email" />
-              <input type="text" name="country" />
-              <textarea name="message" />
-              <input type="text" name="bot-field" />
-            </form>
-
             <form onSubmit={handleSubmit} className="space-y-6">
               <label className="block">
                 <span className="mb-2 block text-sm text-porcelain">Full name</span>

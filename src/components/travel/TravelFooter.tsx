@@ -43,7 +43,7 @@ export default function TravelFooter() {
       </div>
 
       <div className="border-t border-ink-line px-6 py-6 text-center text-xs text-slate lg:px-10">
-        <p>&copy; {new Date().getFullYear()} {CONTACT.companyName}. {CONTACT.rcNumber}.</p>
+        <p>&copy; 2012 {CONTACT.companyName}. {CONTACT.rcNumber}.</p>
       </div>
     </footer>
   );
